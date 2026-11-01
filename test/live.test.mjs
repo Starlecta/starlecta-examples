@@ -40,10 +40,16 @@ const json = (res, status, body, headers = {}) => {
   res.end(JSON.stringify(body));
 };
 
-test("a keyed command without STARLECTA_AGENT_KEY stops before any request", async () => {
-  const out = await cli(["lookup", "synthetic_beauty_a"], { STARLECTA_BASE_URL: "http://127.0.0.1:9" });
-  assert.equal(out.code, 2);
-  assert.match(out.stderr, /needs an agent key/);
+test("a command without STARLECTA_AGENT_KEY sends the request with no Authorization header", async () => {
+  await withServer(
+    (req, res) => json(res, 200, { status: "open" }),
+    async (base, seen) => {
+      const out = await cli(["lookup", "synthetic_beauty_a"], { STARLECTA_BASE_URL: base });
+      assert.equal(out.code, 0, out.stderr);
+      assert.equal(seen.length, 1);
+      assert.equal(seen[0].auth, undefined);
+    },
+  );
 });
 
 test("search maps flags to the documented query names and sends the bearer header", async () => {

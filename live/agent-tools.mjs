@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Command line client for Starlecta's live public tools. Node 24, no dependencies.
-//   STARLECTA_AGENT_KEY=slk_... node live/agent-tools.mjs lookup some_handle
+//   node live/agent-tools.mjs lookup some_handle
+//   STARLECTA_AGENT_KEY=slk_... node live/agent-tools.mjs lookup some_handle   (optional own key)
 // Key and limits: https://starlecta.com/auth.md
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
@@ -14,9 +15,9 @@ const USAGE = `Usage: node live/agent-tools.mjs <command> [arguments]
   compare <handle-a> <handle-b>
   search [--tier T] [--category CODE] [--followers-min N] [--followers-max N] [--er-measured]
   ai-search "<one sentence, 2 to 200 characters>"
-  trend-cloud                     (no key needed)
+  trend-cloud
 
-Key: set STARLECTA_AGENT_KEY. How to get one: https://starlecta.com/auth.md
+Key (optional): without one, calls are tied to your network. For your own limits set STARLECTA_AGENT_KEY. How to get one: https://starlecta.com/auth.md
 Options on any command: --json (print only the JSON)`;
 
 export class CliError extends Error {
@@ -53,7 +54,7 @@ async function send(url, init, log) {
     }
   }
   if (res.status === 401) {
-    throw new CliError(`401 invalid_key: the key is missing, wrong or revoked. Get one with POST ${BASE}/api/agent/keys (see ${BASE}/auth.md). ${text.slice(0, 200)}`);
+    throw new CliError(`401 invalid_key: the key you sent is wrong or revoked. Get one with POST ${BASE}/api/agent/keys (see ${BASE}/auth.md). ${text.slice(0, 200)}`);
   }
   if (res.status === 404) throw new CliError("404: that tool is switched off.");
   if (!res.ok) throw new CliError(`HTTP ${res.status}: ${text.slice(0, 500)}`);
@@ -72,7 +73,7 @@ function parseBody(text, contentType) {
 export async function rest(path, { key, query, body } = {}, log = console.error) {
   const url = new URL(BASE + path);
   for (const [k, v] of Object.entries(query || {})) if (v !== undefined) url.searchParams.set(k, String(v));
-  const headers = { accept: "application/json", authorization: `Bearer ${key}` };
+  const headers = { accept: "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) };
   const init = body === undefined ? { headers } : { method: "POST", headers: { ...headers, "content-type": "application/json" }, body: JSON.stringify(body) };
   const { text } = await send(url, init, log);
   return JSON.parse(text);
@@ -151,17 +152,6 @@ export function summarize(command, data) {
   return lines.join("\n");
 }
 
-function requireKey() {
-  const key = process.env.STARLECTA_AGENT_KEY;
-  if (!key) {
-    throw new CliError(
-      `This command needs an agent key. Set STARLECTA_AGENT_KEY.\nGet a key: POST ${BASE}/api/agent/keys with {"label","email","use"} (see ${BASE}/auth.md), or use the form at ${BASE}/en/agents/key.\ntrend-cloud works without one.`,
-      2,
-    );
-  }
-  return key;
-}
-
 const OPTIONS = {
   tier: { type: "string" },
   category: { type: "string" },
@@ -192,10 +182,10 @@ export async function run(argv, log = console.error) {
     data = await mcpCall("trend_cloud", {}, process.env.STARLECTA_AGENT_KEY, log);
   } else if (command === "lookup") {
     need(1);
-    data = await rest("/api/agent/tools/lookup", { key: requireKey(), query: { handle: args[0] } }, log);
+    data = await rest("/api/agent/tools/lookup", { key: process.env.STARLECTA_AGENT_KEY, query: { handle: args[0] } }, log);
   } else if (command === "compare") {
     need(2);
-    data = await rest("/api/agent/tools/compare", { key: requireKey(), query: { a: args[0], b: args[1] } }, log);
+    data = await rest("/api/agent/tools/compare", { key: process.env.STARLECTA_AGENT_KEY, query: { a: args[0], b: args[1] } }, log);
   } else if (command === "search") {
     need(0);
     // Values are passed through unchecked: the server answers 400 for a value it does not accept.
@@ -206,10 +196,10 @@ export async function run(argv, log = console.error) {
       followers_max: values["followers-max"],
       er_measured: values["er-measured"] ? "true" : undefined,
     };
-    data = await rest("/api/agent/tools/search", { key: requireKey(), query }, log);
+    data = await rest("/api/agent/tools/search", { key: process.env.STARLECTA_AGENT_KEY, query }, log);
   } else if (command === "ai-search") {
     need(1);
-    data = await rest("/api/agent/tools/ai-search", { key: requireKey(), body: { sentence: args[0] } }, log);
+    data = await rest("/api/agent/tools/ai-search", { key: process.env.STARLECTA_AGENT_KEY, body: { sentence: args[0] } }, log);
   } else {
     throw new CliError(`Unknown command: ${command}\n\n${USAGE}`, 2);
   }

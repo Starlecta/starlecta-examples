@@ -54,11 +54,11 @@ The key starts with `slk_` and is shown once; Starlecta keeps only a hash. Keys 
 
 `429` with `Retry-After` means a limit was reached: wait that many seconds. `401` with `{"error":"invalid_key"}` means the key you sent is wrong or revoked. `404` means that tool is switched off. The MCP server reports a wrong key differently: HTTP 200 with `isError: true` and a text block, not 401.
 
-**Try it from the command line** ([live/agent-tools.mjs](live/agent-tools.mjs), Node 24, no dependencies; the REST commands read your own key from `STARLECTA_AGENT_KEY`, waits for `Retry-After` once and stops):
+**Try it from the command line** ([live/agent-tools.mjs](live/agent-tools.mjs), Node 24, no dependencies; it sends your own key from `STARLECTA_AGENT_KEY` when set, and none otherwise, waits for `Retry-After` once and stops):
 
 ```sh
-node live/agent-tools.mjs trend-cloud                  # no key needed
-export STARLECTA_AGENT_KEY=slk_YOUR_KEY
+node live/agent-tools.mjs trend-cloud
+export STARLECTA_AGENT_KEY=slk_YOUR_KEY       # optional: your own key and limits
 node live/agent-tools.mjs lookup <handle>
 node live/agent-tools.mjs compare <handle-a> <handle-b>
 node live/agent-tools.mjs search --tier micro --category beauty --er-measured

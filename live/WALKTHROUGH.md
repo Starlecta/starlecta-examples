@@ -16,7 +16,7 @@ Tool: `ai_search_influencers`, input: one sentence of 2 to 200 characters, Turki
 The same call from a terminal:
 
 ```sh
-export STARLECTA_AGENT_KEY=slk_YOUR_KEY
+export STARLECTA_AGENT_KEY=slk_YOUR_KEY   # optional
 node live/agent-tools.mjs ai-search "Türkiye'den güzellik ve makyaj içerik üreticileri, 10 bin ile 100 bin takipçi, ölçülmüş etkileşim oranı olanlar"
 ```
 
