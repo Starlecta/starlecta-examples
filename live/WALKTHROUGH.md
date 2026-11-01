@@ -1,6 +1,6 @@
 # Walkthrough: a shortlist of Turkish beauty creators
 
-Goal: find Turkish beauty creators with AI search, look up two of them, compare them, and write a short note a colleague can check. It uses the hosted MCP server (`https://starlecta.com/mcp`) and needs an agent key, see [auth.md](https://starlecta.com/auth.md). Setup per client: [mcp-configs](mcp-configs/README.md). It uses 4 tool calls, inside the limit of 6 requests a minute and the daily limits (lookup 30, compare 15, search 30, AI search 10 per key).
+Goal: find Turkish beauty creators with AI search, look up two of them, compare them, and write a short note a colleague can check. It uses the hosted MCP server (`https://starlecta.com/mcp`) and needs no key: without one, calls are tied to your network. Your own key is optional, see [auth.md](https://starlecta.com/auth.md). Setup per client: [mcp-configs](mcp-configs/README.md). It uses 4 tool calls, inside the limit of 6 requests a minute and the daily limits (lookup 30, compare 15, search 30, AI search 10 per key).
 
 **What is real and what is not.** Only the Trend Cloud excerpt in the last section was captured from the live server (2026-10-30). Everything else here is **illustrative**: the handles (`synthetic_beauty_a`, `synthetic_beauty_b`) are invented, the numbers are made up, and the field names are a sketch built from what [auth.md](https://starlecta.com/auth.md) says an answer holds, not a published schema. A handle in the underscore form is valid on Instagram and could exist; it is not a statement about any account. When you run the steps yourself, read the real answer: `node live/agent-tools.mjs` prints the full JSON under its summary.
 
@@ -106,7 +106,7 @@ Shortlist: Turkish beauty creators, micro tier (Starlecta public tools, queried 
 Compared on the same method and dates, the engagement of the two is in the same band ("similar"). This is not a ranking.
 Not known from these tools: quality score, audience, brands worked with.
 The search matched many more creators than the two shown; the other matches are not named by the public tools.
-Source: https://starlecta.com (public tools, agent key). Figures are dated as above.
+Source: https://starlecta.com (public tools). Figures are dated as above.
 ```
 
 Rules worth keeping in your own notes: quote a figure with its date; never turn `not measured` into 0; do not call a creator better; say what the tools cannot tell you. Metric definitions: [engagement rate](https://starlecta.com/en/methods/engagement), [SQS](https://starlecta.com/en/methods/sqs).
@@ -147,6 +147,6 @@ Hashtag counts are posts; product, platform and brand counts are shares, as the 
 
 ## When a call fails
 
-- REST endpoints: `401` with `{"error":"invalid_key"}` means the key is missing, wrong or revoked; `429` with `Retry-After` means wait that many seconds; `404` means the tool is switched off.
-- MCP: a missing or wrong key comes back as HTTP 200 with `isError: true` and a text block, not as 401. Check `isError`.
+- REST endpoints: `401` with `{"error":"invalid_key"}` means the key you sent is wrong or revoked; `429` with `Retry-After` means wait that many seconds; `404` means the tool is switched off.
+- MCP: a wrong key comes back as HTTP 200 with `isError: true` and a text block, not as 401. Check `isError`.
 - `agent-tools.mjs` waits for `Retry-After` once, tries once more, and then stops with a non-zero exit code.

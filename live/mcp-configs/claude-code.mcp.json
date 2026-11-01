@@ -2,10 +2,7 @@
   "mcpServers": {
     "starlecta": {
       "type": "http",
-      "url": "https://starlecta.com/mcp",
-      "headers": {
-        "Authorization": "Bearer ${STARLECTA_AGENT_KEY}"
-      }
+      "url": "https://starlecta.com/mcp"
     }
   }
 }

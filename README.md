@@ -22,38 +22,39 @@ Besides the offline examples below, Starlecta runs free tools on real data. Ever
 | Story views estimator | [starlecta.com/en/tools/story-views-estimator](https://starlecta.com/en/tools/story-views-estimator) |
 | Campaign content planner | [starlecta.com/en/tools/campaign-content-planner](https://starlecta.com/en/tools/campaign-content-planner) |
 
-The interactive demo is for people in a browser; do not automate it. Agents use a key (below). The live tools answer from Starlecta's tracked accounts and show dated, rounded figures; they are not a full list of creators in Turkey.
+The interactive demo is for people in a browser; do not automate it. Agents can call the live tools without a key; your own key is optional (below). The live tools answer from Starlecta's tracked accounts and show dated, rounded figures; they are not a full list of creators in Turkey.
 
-**Hosted MCP server:** `https://starlecta.com/mcp` (Streamable HTTP, stateless). Tools: `lookup_influencer`, `compare_influencers`, `search_influencers`, `ai_search_influencers`, `trend_cloud`. `trend_cloud` works without a key. Discovery card: [server-card.json](https://starlecta.com/.well-known/mcp/server-card.json). Client setup (Cursor, VS Code, Claude Desktop, Claude Code): [live/mcp-configs](live/mcp-configs/README.md).
+**Hosted MCP server:** `https://starlecta.com/mcp` (Streamable HTTP, stateless). Tools: `lookup_influencer`, `compare_influencers`, `search_influencers`, `ai_search_influencers`, `audit_influencer`, `trend_cloud`. Six tools. A key is optional: without one, calls are tied to the caller's network. Discovery card: [server-card.json](https://starlecta.com/.well-known/mcp/server-card.json). Client setup (Cursor, VS Code, Claude Desktop, Claude Code): [live/mcp-configs](live/mcp-configs/README.md).
 
-**Get a key (an agent can do this itself, once):**
+**Get your own key (optional; an agent can do this itself, once):**
 
 ```sh
 curl -X POST https://starlecta.com/api/agent/keys   -H 'content-type: application/json'   -d '{"label":"<agent or company name, up to 80 characters>","email":"<contact e-mail>","use":"<what the agent will do, up to 200 characters>"}'
 ```
 
-The key starts with `slk_` and is shown once; Starlecta keeps only a hash. Keys per address and per day are limited, so ask for one and reuse it. A person can use the form instead ([English](https://starlecta.com/en/agents/key), [Türkçe](https://starlecta.com/tr/ajanlar/anahtar)). Keep the key secret: never put it in a page, a public repository or a shared prompt. Use it as `Authorization: Bearer slk_...` on the MCP server and on the REST endpoints. Use a key for the purpose you gave; do not share or resell it, copy the catalogue, build lists in bulk or get around the limits with several keys. Revocation: write to support@starlecta.com.
+The key starts with `slk_` and is shown once; Starlecta keeps only a hash. Keys per address and per day are limited, so ask for one and reuse it. A person can use the form instead ([English](https://starlecta.com/en/agents/key), [Türkçe](https://starlecta.com/tr/ajanlar/anahtar)). Keep the key secret: never put it in a page, a public repository or a shared prompt. A key keeps your usage under your own limits. Send it as `Authorization: Bearer slk_...` (optional) on the MCP server and on the REST endpoints; without it the call is tied to your network. Use a key for the purpose you gave; do not share or resell it, copy the catalogue, build lists in bulk or get around the limits with several keys. Revocation: write to support@starlecta.com.
 
-**REST endpoints** (all need the bearer header; OpenAPI: [public-pages.json](https://starlecta.com/openapi/public-pages.json)):
+**REST endpoints** (the bearer header is optional; OpenAPI: [public-pages.json](https://starlecta.com/openapi/public-pages.json)):
 
 - Lookup: `GET https://starlecta.com/api/agent/tools/lookup?handle=<instagram handle>`
 - Compare: `GET https://starlecta.com/api/agent/tools/compare?a=<handle>&b=<handle>`
 - Search: `GET https://starlecta.com/api/agent/tools/search?category=<code>&tier=<nano|micro|macro|mega>&followers_min=<n>&followers_max=<n>&er_measured=<true|false>` (every filter is optional)
 - AI search: `POST https://starlecta.com/api/agent/tools/ai-search` with `{"sentence": "<one sentence, 2 to 200 characters>"}`. The sentence is read as the same filters as Search (fast mode only).
+- Global Account Check: `GET https://starlecta.com/api/agent/tools/audit?handle=<instagram handle>`. Reads one public Instagram account live (10,000 followers or more) and returns dated, counted figures; it is a reading of public numbers, not a score.
 
 **What an answer holds:** each handle is `open` (public follower count and measured engagement rate, dated), `tracked` (name, tier, category and a rounded follower band, no metric) or `not_listed` (no match, or an account that cannot be shown). Search returns a count (shown as `fewer than 10` below 10), up to two open cards and the number of locked results; it never lists tracked or locked identities. The Starlecta Quality Score is not part of these tools for named creators. Quote a figure together with its date.
 
-**Limits per key** (launch values; the response that issues your key lists yours):
+**Limits per key, or per network without one** (launch values; the response that issues your key lists yours):
 
 | | |
 |---|---|
-| Per day | lookup 30, compare 15, search 30, AI search 10 |
+| Per day | lookup 30, compare 15, search 30, AI search 10, Global Account Check 5 |
 | Per minute | 6 requests, all tools together |
 | Shared | a daily total across all agent keys also applies, separate from the visitor limits of the website |
 
-`429` with `Retry-After` means a limit was reached: wait that many seconds. `401` with `{"error":"invalid_key"}` means the key is missing, wrong or revoked. `404` means that tool is switched off. The MCP server reports a missing or wrong key differently: HTTP 200 with `isError: true` and a text block, not 401.
+`429` with `Retry-After` means a limit was reached: wait that many seconds. `401` with `{"error":"invalid_key"}` means the key you sent is wrong or revoked. `404` means that tool is switched off. The MCP server reports a wrong key differently: HTTP 200 with `isError: true` and a text block, not 401.
 
-**Try it from the command line** ([live/agent-tools.mjs](live/agent-tools.mjs), Node 24, no dependencies; it reads the key from `STARLECTA_AGENT_KEY`, waits for `Retry-After` once and stops):
+**Try it from the command line** ([live/agent-tools.mjs](live/agent-tools.mjs), Node 24, no dependencies; the REST commands read your own key from `STARLECTA_AGENT_KEY`, waits for `Retry-After` once and stops):
 
 ```sh
 node live/agent-tools.mjs trend-cloud                  # no key needed

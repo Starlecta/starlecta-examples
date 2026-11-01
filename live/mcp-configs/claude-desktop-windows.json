@@ -4,13 +4,8 @@
       "command": "npx",
       "args": [
         "mcp-remote",
-        "https://starlecta.com/mcp",
-        "--header",
-        "Authorization:${STARLECTA_AUTH}"
-      ],
-      "env": {
-        "STARLECTA_AUTH": "Bearer slk_YOUR_KEY"
-      }
+        "https://starlecta.com/mcp"
+      ]
     }
   }
 }
