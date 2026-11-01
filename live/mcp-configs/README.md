@@ -50,5 +50,5 @@ This expands the key from your shell and stores it in your local Claude Code con
 ## If it does not work
 
 - The MCP server answers a wrong or revoked key with HTTP 200 and an error result (`isError: true`), not with HTTP 401. Only the REST endpoints answer 401. Clients show this as a tool error. If a keyed setup fails, try the keyless file to tell a key problem from a connection problem.
-- Rate limits are per key, or per network without one: 6 requests a minute across all tools, and daily limits per tool. See [auth.md](https://starlecta.com/auth.md).
+- Rate limits are per key, or per network without one: 60 requests a minute across all tools, and daily limits per tool. See [auth.md](https://starlecta.com/auth.md).
 - `trend_cloud` never uses a key; use it to check the connection.

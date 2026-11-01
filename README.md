@@ -44,12 +44,12 @@ The key starts with `slk_` and is shown once; Starlecta keeps only a hash. Keys 
 
 **What an answer holds:** each handle is `open` (public follower count and measured engagement rate, dated), `tracked` (name, tier, category and a rounded follower band, no metric) or `not_listed` (no match, or an account that cannot be shown). Search returns a count (shown as `fewer than 10` below 10), up to two open cards and the number of locked results; it never lists tracked or locked identities. The Starlecta Quality Score is not part of these tools for named creators. Quote a figure together with its date.
 
-**Limits per key, or per network without one** (launch values; the response that issues your key lists yours):
+**Limits per key, or per network without one** (values of 1 November 2026; the response that issues your key lists yours):
 
 | | |
 |---|---|
-| Per day | lookup 30, compare 15, search 30, AI search 10, Global Account Check 5 |
-| Per minute | 6 requests, all tools together |
+| Per day | lookup 300, compare 150, search 300, AI search 60, Global Account Check 5 |
+| Per minute | 60 requests, all tools together |
 | Shared | a daily total across all agent keys also applies, separate from the visitor limits of the website |
 
 `429` with `Retry-After` means a limit was reached: wait that many seconds. `401` with `{"error":"invalid_key"}` means the key you sent is wrong or revoked. `404` means that tool is switched off. The MCP server reports a wrong key differently: HTTP 200 with `isError: true` and a text block, not 401.
