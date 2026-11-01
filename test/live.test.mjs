@@ -148,6 +148,44 @@ test("trend-cloud works without a key and prefers structuredContent", async () =
   );
 });
 
+test("brand-of-the-day sends the optional day, needs no key and prints a summary", async () => {
+  await withServer(
+    (req, res) =>
+      json(res, 200, {
+        day: "2026-01-01",
+        entity: { kind: "brand", name: "Example Brand" },
+        headline: { en: ["Example Brand grew its creators 2x."] },
+        kpis: { creators: 20, contents: 40, reel_plays: 1000 },
+        share: [{ name: "Example Brand", share_pct: 55.5 }],
+      }),
+    async (base, seen) => {
+      const out = await cli(["brand-of-the-day", "2026-01-01"], { STARLECTA_BASE_URL: base });
+      assert.equal(out.code, 0, out.stderr);
+      const url = new URL(seen[0].url, base);
+      assert.equal(url.pathname, "/api/agent/tools/brand-of-the-day");
+      assert.equal(url.searchParams.get("day"), "2026-01-01");
+      assert.equal(seen[0].auth, undefined);
+      assert.match(out.stdout, /Brand of the Day, 2026-01-01: Example Brand \(brand\)/);
+      assert.match(out.stdout, /Example Brand {2}55\.5%/);
+
+      const latest = await cli(["brand-of-the-day"], { STARLECTA_BASE_URL: base });
+      assert.equal(latest.code, 0, latest.stderr);
+      assert.equal(new URL(seen[1].url, base).searchParams.has("day"), false);
+    },
+  );
+});
+
+test("brand-of-the-day rejects a malformed day before any request", async () => {
+  await withServer(
+    (req, res) => json(res, 200, {}),
+    async (base, seen) => {
+      const out = await cli(["brand-of-the-day", "yesterday"], { STARLECTA_BASE_URL: base });
+      assert.equal(out.code, 2);
+      assert.equal(seen.length, 0);
+    },
+  );
+});
+
 test("an MCP isError answer (HTTP 200) exits non-zero", async () => {
   await withServer(
     (req, res) => json(res, 200, { jsonrpc: "2.0", id: 1, result: { isError: true, content: [{ type: "text", text: "This tool needs an agent key." }] } }),
@@ -160,8 +198,8 @@ test("an MCP isError answer (HTTP 200) exits non-zero", async () => {
 });
 
 test("the summary never crashes on an unknown shape", () => {
-  for (const cmd of ["lookup", "compare", "search", "ai-search", "trend-cloud"]) {
-    for (const data of [{}, { unexpected: [1, 2] }, [], null, "text", { cards: [null, 5, {}] }]) {
+  for (const cmd of ["lookup", "compare", "search", "ai-search", "trend-cloud", "brand-of-the-day"]) {
+    for (const data of [{}, { unexpected: [1, 2] }, [], null, "text", { cards: [null, 5, {}] }, { entity: "x", kpis: 3, share: [null, 4] }]) {
       assert.equal(typeof summarize(cmd, data), "string");
     }
   }

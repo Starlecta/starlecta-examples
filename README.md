@@ -18,13 +18,14 @@ Besides the offline examples below, Starlecta runs free tools on real data. Ever
 | Compare two influencers | [starlecta.com/en/demo/compare](https://starlecta.com/en/demo/compare) |
 | Search and AI search | [starlecta.com/en/demo/search](https://starlecta.com/en/demo/search) |
 | Trend Cloud (hashtags, products, platforms and brands shared in the last 7 days) | [starlecta.com/en/tools/trend-cloud](https://starlecta.com/en/tools/trend-cloud) |
+| Brand of the Day (one brand or shopping platform a day: its week against its rivals and the audience reached) | [starlecta.com/en/brand-of-the-day](https://starlecta.com/en/brand-of-the-day) ([Türkçe](https://starlecta.com/tr/gunun-markasi)) |
 | Engagement rate calculator | [starlecta.com/en/tools/engagement-rate-calculator](https://starlecta.com/en/tools/engagement-rate-calculator) |
 | Story views estimator | [starlecta.com/en/tools/story-views-estimator](https://starlecta.com/en/tools/story-views-estimator) |
 | Campaign content planner | [starlecta.com/en/tools/campaign-content-planner](https://starlecta.com/en/tools/campaign-content-planner) |
 
 The interactive demo is for people in a browser; do not automate it. Agents can call the live tools without a key; your own key is optional (below). The live tools answer from Starlecta's tracked accounts and show dated, rounded figures; they are not a full list of creators in Turkey.
 
-**Hosted MCP server:** `https://starlecta.com/mcp` (Streamable HTTP, stateless). Tools: `lookup_influencer`, `compare_influencers`, `search_influencers`, `ai_search_influencers`, `audit_influencer`, `trend_cloud`. Six tools. A key is optional: without one, calls are tied to the caller's network. Discovery card: [server-card.json](https://starlecta.com/.well-known/mcp/server-card.json). Client setup (Cursor, VS Code, Claude Desktop, Claude Code): [live/mcp-configs](live/mcp-configs/README.md).
+**Hosted MCP server:** `https://starlecta.com/mcp` (Streamable HTTP, stateless). Tools: `lookup_influencer`, `compare_influencers`, `search_influencers`, `ai_search_influencers`, `audit_influencer`, `trend_cloud`, `brand_of_the_day`. Seven tools (server version 1.1.0). A key is optional: without one, calls are tied to the caller's network. Discovery card: [server-card.json](https://starlecta.com/.well-known/mcp/server-card.json). Client setup (Cursor, VS Code, Claude Desktop, Claude Code): [live/mcp-configs](live/mcp-configs/README.md).
 
 **Get your own key (optional; an agent can do this itself, once):**
 
@@ -40,6 +41,7 @@ The key starts with `slk_` and is shown once; Starlecta keeps only a hash. Keys 
 - Compare: `GET https://starlecta.com/api/agent/tools/compare?a=<handle>&b=<handle>`
 - Search: `GET https://starlecta.com/api/agent/tools/search?category=<code>&tier=<nano|micro|macro|mega>&followers_min=<n>&followers_max=<n>&er_measured=<true|false>` (every filter is optional)
 - AI search: `POST https://starlecta.com/api/agent/tools/ai-search` with `{"sentence": "<one sentence, 2 to 200 characters>"}`. The sentence is read as the same filters as Search (fast mode only).
+- Brand of the Day: `GET https://starlecta.com/api/agent/tools/brand-of-the-day?day=YYYY-MM-DD` (`day` is optional; the latest day when omitted). No key needed, like Trend Cloud, and the same per-minute window as the other tools. Aggregates only: no creator handles, names, links or per-creator scores. Dated pages: `https://starlecta.com/en/brand-of-the-day/YYYY-MM-DD`, with a Markdown twin at the same path plus `.md`.
 - Global Account Check: `GET https://starlecta.com/api/agent/tools/audit?handle=<instagram handle>`. Reads one public Instagram account live (10,000 followers or more) and returns dated, counted figures; it is a reading of public numbers, not a score.
 
 **What an answer holds:** each handle is `open` (public follower count and measured engagement rate, dated), `tracked` (name, tier, category and a rounded follower band, no metric) or `not_listed` (no match, or an account that cannot be shown). Search returns a count (shown as `fewer than 10` below 10), up to two open cards and the number of locked results; it never lists tracked or locked identities. The Starlecta Quality Score is not part of these tools for named creators. Quote a figure together with its date.
@@ -58,6 +60,7 @@ The key starts with `slk_` and is shown once; Starlecta keeps only a hash. Keys 
 
 ```sh
 node live/agent-tools.mjs trend-cloud
+node live/agent-tools.mjs brand-of-the-day            # latest day; or: brand-of-the-day 2026-11-01
 export STARLECTA_AGENT_KEY=slk_YOUR_KEY       # optional: your own key and limits
 node live/agent-tools.mjs lookup <handle>
 node live/agent-tools.mjs compare <handle-a> <handle-b>
@@ -76,6 +79,22 @@ Platforms:
   Trendyol  65625 shares
   Hepsiburada  60511 shares
 ```
+
+`brand-of-the-day` prints, for example (a real excerpt, day 2026-11-01, captured 2026-11-02; the featured brand or platform changes daily):
+
+```text
+Brand of the Day, 2026-11-01: kitapyurdu.com (platform)
+kitapyurdu.com grew its creators 11×. It leads the conversation with 61.3%.
+  Creators: 121
+  Contents: 416
+  Reel plays: 3726
+Share of conversation:
+  kitapyurdu.com  61.3%
+  dr.com.tr  20%
+  idefix.com  18.7%
+```
+
+The answer also holds the audience reached (gender, age, city, two top interests), movement and loyalty counts and `source` / `source_tr` page links. It never names creators.
 
 A worked example with illustrative answers (AI search, two lookups, a comparison and a shortlist note): [live/WALKTHROUGH.md](live/WALKTHROUGH.md). Terms: [terms](https://starlecta.com/en/terms), [privacy](https://starlecta.com/en/privacy).
 
@@ -168,7 +187,7 @@ and an unknown name returns `Not found.` with `Missing: not_in_open_pool`, never
 
 ## Data and limits
 
-- The fixtures, expected outputs and the bundled MCP edition in this repository are synthetic. The one real, dated excerpt is the Trend Cloud sample in the live-tools section and in [live/WALKTHROUGH.md](live/WALKTHROUGH.md), captured from the hosted server on 2026-10-30; every other example answer in `live/` is marked illustrative. The workflow fixtures use handles like `example-creator-a`; Instagram does not allow hyphens in handles, so none is a real account. The MCP edition fixture uses names like `synthetic_beauty_a` and slugs like `sentetik-guzellik-a`. They are invented and labelled synthetic, but a handle in the underscore form is valid on Instagram and could exist, so do not read it as a statement about any account.
+- The fixtures, expected outputs and the bundled MCP edition in this repository are synthetic. The two real, dated excerpts are the Trend Cloud sample (captured from the hosted server on 2026-10-30) and the Brand of the Day sample (day 2026-11-01, captured on 2026-11-02), both in the live-tools section and in [live/WALKTHROUGH.md](live/WALKTHROUGH.md); every other example answer in `live/` is marked illustrative. The workflow fixtures use handles like `example-creator-a`; Instagram does not allow hyphens in handles, so none is a real account. The MCP edition fixture uses names like `synthetic_beauty_a` and slugs like `sentetik-guzellik-a`. They are invented and labelled synthetic, but a handle in the underscore form is valid on Instagram and could exist, so do not read it as a statement about any account.
 - The local MCP server in `mcp-server/` serves a selected pool of open examples (10 in the bundled edition), not every creator in Turkey. It has no default data source: you point it at a public-data folder or URL, and the open edition files are not published. For live data use the hosted tools above, which answer from Starlecta's tracked accounts with the limits stated there.
 - Rules the workflows keep: a comparison uses the bands in the response and never names a winner; rates and scores keep their dates, coverage and missing-data reasons, and null is never shown as zero; measured Reel plays and estimated Story views are kept apart and never added; shared creators count accounts that posted for two brands, not shared audience.
 - The quality score is no guarantee of sales or reach. The SQS formula and weights are not published here; the MCP server never returns a score for a named creator, and the SQS values in the workflow output above are invented fixture numbers for the placeholder handles `example-creator-a` and `example-creator-b`. Definitions: [SQS](https://starlecta.com/en/methods/sqs), [engagement rate](https://starlecta.com/en/methods/engagement), [Story estimate](https://starlecta.com/en/methods/story-estimate).

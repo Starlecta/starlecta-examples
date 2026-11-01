@@ -1,6 +1,6 @@
 # Connect an assistant to the hosted Starlecta MCP server
 
-Server: `https://starlecta.com/mcp` (Streamable HTTP, stateless). Six tools: `lookup_influencer`, `compare_influencers`, `search_influencers`, `ai_search_influencers`, `audit_influencer`, `trend_cloud`. A key is optional: without one, calls are tied to your network. The files named below hold the keyless setup; the `*-with-key` files next to them send your own key as `Authorization: Bearer slk_...` and get limits of their own. Own key: `POST https://starlecta.com/api/agent/keys` or the form at https://starlecta.com/en/agents/key (details in [auth.md](https://starlecta.com/auth.md)). The keyed files use the placeholder `slk_YOUR_KEY`; never commit a real key.
+Server: `https://starlecta.com/mcp` (Streamable HTTP, stateless). Seven tools (server version 1.1.0): `lookup_influencer`, `compare_influencers`, `search_influencers`, `ai_search_influencers`, `audit_influencer`, `trend_cloud`, `brand_of_the_day`. A key is optional: without one, calls are tied to your network. The files named below hold the keyless setup; the `*-with-key` files next to them send your own key as `Authorization: Bearer slk_...` and get limits of their own. Own key: `POST https://starlecta.com/api/agent/keys` or the form at https://starlecta.com/en/agents/key (details in [auth.md](https://starlecta.com/auth.md)). The keyed files use the placeholder `slk_YOUR_KEY`; never commit a real key.
 
 (These configs are for the hosted server. The local, offline server in [../../mcp-server](../../mcp-server/) is configured in [its own guide](../../mcp-server/examples/client-configs.md).)
 
@@ -51,4 +51,4 @@ This expands the key from your shell and stores it in your local Claude Code con
 
 - The MCP server answers a wrong or revoked key with HTTP 200 and an error result (`isError: true`), not with HTTP 401. Only the REST endpoints answer 401. Clients show this as a tool error. If a keyed setup fails, try the keyless file to tell a key problem from a connection problem.
 - Rate limits are per key, or per network without one: 60 requests a minute across all tools, and daily limits per tool. See [auth.md](https://starlecta.com/auth.md).
-- `trend_cloud` never uses a key; use it to check the connection.
+- `trend_cloud` and `brand_of_the_day` never need a key; use either to check the connection.

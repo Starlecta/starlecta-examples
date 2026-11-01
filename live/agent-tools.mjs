@@ -16,6 +16,7 @@ const USAGE = `Usage: node live/agent-tools.mjs <command> [arguments]
   search [--tier T] [--category CODE] [--followers-min N] [--followers-max N] [--er-measured]
   ai-search "<one sentence, 2 to 200 characters>"
   trend-cloud
+  brand-of-the-day [YYYY-MM-DD]      (latest day when omitted; no key needed)
 
 Key (optional): without one, calls are tied to your network. For your own limits set STARLECTA_AGENT_KEY. How to get one: https://starlecta.com/auth.md
 Options on any command: --json (print only the JSON)`;
@@ -124,7 +125,7 @@ function cardLine(card) {
 const topLines = (title, list, label) =>
   Array.isArray(list) && list.length ? [`${title}:`, ...list.slice(0, 5).map((x) => `  ${label(x)}`)] : [];
 
-// Best-effort summary. Only trend_cloud has a shape this repo has seen; for the
+// Best-effort summary. Only trend_cloud and brand_of_the_day have a shape this repo has seen; for the
 // keyed tools every line is optional and the full JSON is always printed after it.
 export function summarize(command, data) {
   if (!data || typeof data !== "object") return "";
@@ -135,6 +136,18 @@ export function summarize(command, data) {
     lines.push(...topLines("Products", data.products, (x) => `${x.name} (${x.brand})  ${x.shares} shares`));
     lines.push(...topLines("Platforms", data.platforms, (x) => `${x.name}  ${x.shares} shares`));
     lines.push(...topLines("Brands", data.brands, (x) => `${x.name}  ${x.shares} shares`));
+    return lines.join("\n");
+  }
+  if (command === "brand-of-the-day") {
+    const entity = data.entity && typeof data.entity === "object" ? data.entity : {};
+    const headline = Array.isArray(data.headline?.en) ? data.headline.en.join(" ") : undefined;
+    const kpis = data.kpis && typeof data.kpis === "object" ? data.kpis : {};
+    lines.push(`Brand of the Day, ${get(data, "day") ?? "(day not given)"}: ${entity.name ?? "(no name)"}${entity.kind ? ` (${entity.kind})` : ""}`);
+    if (headline) lines.push(headline);
+    for (const [label, key] of [["Creators", "creators"], ["Contents", "contents"], ["Reel plays", "reel_plays"]]) {
+      if (kpis[key] !== undefined) lines.push(`  ${label}: ${show(kpis[key])}`);
+    }
+    if (Array.isArray(data.share)) lines.push(...topLines("Share of conversation", data.share, (x) => `${x?.name}  ${x?.share_pct}%`));
     return lines.join("\n");
   }
   const status = get(data, "status");
@@ -180,6 +193,11 @@ export async function run(argv, log = console.error) {
   if (command === "trend-cloud") {
     need(0);
     data = await mcpCall("trend_cloud", {}, process.env.STARLECTA_AGENT_KEY, log);
+  } else if (command === "brand-of-the-day") {
+    if (args.length > 1 || (args.length === 1 && !/^\d{4}-\d{2}-\d{2}$/.test(args[0]))) {
+      throw new CliError(`brand-of-the-day takes an optional day as YYYY-MM-DD.\n\n${USAGE}`, 2);
+    }
+    data = await rest("/api/agent/tools/brand-of-the-day", { key: process.env.STARLECTA_AGENT_KEY, query: { day: args[0] } }, log);
   } else if (command === "lookup") {
     need(1);
     data = await rest("/api/agent/tools/lookup", { key: process.env.STARLECTA_AGENT_KEY, query: { handle: args[0] } }, log);

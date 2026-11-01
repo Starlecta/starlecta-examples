@@ -2,7 +2,7 @@
 
 Goal: find Turkish beauty creators with AI search, look up two of them, compare them, and write a short note a colleague can check. It uses the hosted MCP server (`https://starlecta.com/mcp`) and needs no key: without one, calls are tied to your network. Your own key is optional, see [auth.md](https://starlecta.com/auth.md). Setup per client: [mcp-configs](mcp-configs/README.md). It uses 4 tool calls, inside the limit of 60 requests a minute and the daily limits (lookup 300, compare 150, search 300, AI search 60 per key or network).
 
-**What is real and what is not.** Only the Trend Cloud excerpt in the last section was captured from the live server (2026-10-30). Everything else here is **illustrative**: the handles (`synthetic_beauty_a`, `synthetic_beauty_b`) are invented, the numbers are made up, and the field names are a sketch built from what [auth.md](https://starlecta.com/auth.md) says an answer holds, not a published schema. A handle in the underscore form is valid on Instagram and could exist; it is not a statement about any account. When you run the steps yourself, read the real answer: `node live/agent-tools.mjs` prints the full JSON under its summary.
+**What is real and what is not.** Only the Trend Cloud excerpt (captured 2026-10-30) and the Brand of the Day excerpt (captured 2026-11-02), both in the last sections, come from the live server. Everything else here is **illustrative**: the handles (`synthetic_beauty_a`, `synthetic_beauty_b`) are invented, the numbers are made up, and the field names are a sketch built from what [auth.md](https://starlecta.com/auth.md) says an answer holds, not a published schema. A handle in the underscore form is valid on Instagram and could exist; it is not a statement about any account. When you run the steps yourself, read the real answer: `node live/agent-tools.mjs` prints the full JSON under its summary.
 
 ## 1. AI search: one sentence
 
@@ -144,6 +144,38 @@ Rules worth keeping in your own notes: quote a figure with its date; never turn 
 ```
 
 Hashtag counts are posts; product, platform and brand counts are shares, as the field names say. Counts change daily; cite the `computed_at` date, and read the page at the `source` address for how it is built.
+
+## A real answer: Brand of the Day (no key)
+
+`brand_of_the_day` needs no key. Input: an optional `day` (`YYYY-MM-DD`; the latest day when omitted). It returns that day's public payload as `structuredContent`: one featured brand or shopping platform, its week against its rivals, the audience reached, and movement and loyalty counts. It holds aggregates only: no creator handles, names, links or per-creator scores.
+
+```json
+{ "name": "brand_of_the_day", "arguments": { "day": "2026-11-01" } }
+```
+
+```sh
+node live/agent-tools.mjs brand-of-the-day 2026-11-01
+```
+
+This is a real excerpt (day 2026-11-01, captured 2026-11-02 from `GET /api/agent/tools/brand-of-the-day`; the full answer also holds the Turkish headline, reel and engagement comparisons, audience, movement, loyalty and roster blocks):
+
+```json
+{
+  "day": "2026-11-01",
+  "period": { "start": "2026-10-25", "end": "2026-10-31", "prev_start": "2026-10-18", "prev_end": "2026-10-24" },
+  "entity": { "kind": "platform", "name": "kitapyurdu.com", "slug": "kitapyurdu-com" },
+  "headline": { "en": ["kitapyurdu.com grew its creators 11×.", "It leads the conversation with 61.3%."] },
+  "kpis": { "creators": 121, "creators_prev": 11, "contents": 416, "contents_prev": 24, "reel_plays": 3726, "reels_measured": 1, "reels_total": 3 },
+  "share": [
+    { "name": "kitapyurdu.com", "share_pct": 61.3, "share_prev_pct": 64.9, "creators": 121, "subject": true },
+    { "name": "dr.com.tr", "share_pct": 20, "share_prev_pct": 18.9, "creators": 50, "subject": false },
+    { "name": "idefix.com", "share_pct": 18.7, "share_prev_pct": 16.2, "creators": 19, "subject": false }
+  ],
+  "source": "https://starlecta.com/en/brand-of-the-day/2026-11-01"
+}
+```
+
+Read it as: the figures cover the week `period.start` to `period.end` against the week before, and `share_pct` is a share of the conversation among the featured entity and its rivals. Here `reels_measured` is 1 of 3, so the Reel plays rest on one measured Reel; quote the day and the counts together. The featured brand or platform changes every day; the page at the `source` address, in English, and `source_tr`, in Turkish, shows the same day, and a Markdown twin sits at the same path plus `.md`.
 
 ## When a call fails
 
